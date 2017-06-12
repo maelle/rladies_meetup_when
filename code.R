@@ -13,24 +13,28 @@ get_event_starts <- function(chapter){
                                   api_key = Sys.getenv("MEETUP_KEY"),
                                   event_status = "upcoming"),
                   silent = TRUE)
+  Sys.sleep(1)
   
   if(is(upcoming, "try-error")){
     upcoming <- try(meetupr::get_events(chapter,
                                         api_key = Sys.getenv("MEETUP_KEY"),
                                         event_status = "upcoming"),
                     silent = TRUE)
+    Sys.sleep(1)
   }
   
   past <- try(meetupr::get_events(chapter,
                                   api_key = Sys.getenv("MEETUP_KEY"),
                                   event_status = "past"),
               silent = TRUE)
+  Sys.sleep(1)
   
   if(is(past, "try-error")){
     past <- try(meetupr::get_events(chapter,
                                     api_key = Sys.getenv("MEETUP_KEY"),
                                     event_status = "past"),
                 silent = TRUE)
+    Sys.sleep(1)
   }
 
   if(is(upcoming, "try-error")){
