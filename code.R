@@ -3,8 +3,6 @@ doc.raw <- RCurl::getURL("https://raw.githubusercontent.com/rladies/starter-kit/
 meetups <- stringr::str_match_all(doc.raw, "www.meetup.com/(.*?)/")[[1]][,2]
 meetups <- unique(meetups)
 meetups <- meetups[!meetups %in% c("Spotkania-Entuzjastow-R-Warsaw-R-Users-Group-Meetup",
-                                   "R-Ladies-Cape-Town",
-                                   "rladies-montevideo",
                                    "Taiwan-R")]
 
 get_event_starts <- function(chapter){
@@ -43,11 +41,16 @@ get_event_starts <- function(chapter){
     events <- c(upcoming, past)
   }
   
-  times <- purrr::map_dbl(events, get_time)
+  if(is(events, "try-error")){
+    return(NULL)
+  }else{times <- purrr::map_dbl(events, get_time)
   offsets <- purrr::map_dbl(events, get_utc_offset)
   starts <- as.POSIXct(times/1000 + offsets / 1000,
-             origin = "1970-01-01")
-  lubridate::with_tz(starts, "UTC")
+                       origin = "1970-01-01")
+  tibble::tibble(start = lubridate::with_tz(starts, "UTC"),
+                 chapter = chapter)}
+  
+  
 }
 
 
@@ -59,4 +62,20 @@ get_utc_offset <- function(list){
   return(list$utc_offset)
 }
 
-starts <- purrr::map(meetups, get_event_starts)
+starts <- purrr::map_df(meetups, get_event_starts)
+
+starts <- dplyr::mutate(starts,
+                        hour = lubridate::hour(start),
+                        day = lubridate::wday(start, label = TRUE, 
+                                              abbr = FALSE))
+readr::write_csv(starts, path = "starts.csv")
+library("ggplot2")
+library("hrbrthemes")
+
+ggplot(starts) +
+  geom_bar(aes(hour)) +
+  facet_grid(day ~ .) +
+  theme_ipsum(base_size = 20,
+              axis_title_size = 20)
+ggsave(file = "hours.png",
+       width = 10, height = 10)
